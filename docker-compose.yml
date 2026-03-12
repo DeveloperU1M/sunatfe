@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16.11-bookworm
+    container_name: sunatfe-postgres
+    environment:
+      POSTGRES_DB: sunatfe
+      POSTGRES_USER: sunatfe
+      POSTGRES_PASSWORD: sunatfe
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sunatfe -d sunatfe"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sunatfe-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/sunatfe
+      SPRING_DATASOURCE_USERNAME: sunatfe
+      SPRING_DATASOURCE_PASSWORD: sunatfe
+      SERVER_PORT: 8080
+    ports:
+      - "8081:8080"
+
+volumes:
+  postgres_data:
